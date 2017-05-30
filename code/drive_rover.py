@@ -55,6 +55,13 @@ class RoverState():
         self.mode = 'forward' # Current mode (can be forward or stop)
         self.throttle_set = 0.2 # Throttle setting when accelerating
         self.brake_set = 10 # Brake setting when braking
+        self.steer_dir = 0
+
+        #rock location
+        self.last_rock_sum = 0
+        self.search_fo_new_rock = True
+        self.my_rock_count = 0
+
         # The stop_forward and go_forward fields below represent total count
         # of navigable terrain pixels.  This is a very crude form of knowing
         # when you can keep going and when you should stop.  Feel free to
