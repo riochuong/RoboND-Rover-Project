@@ -1,16 +1,39 @@
 import numpy as np
+from perception import to_polar_coords
 
-
-# This is where you can build a decision tree for determining throttle, brake and steer 
+# This is where you can build a decision tree for determining throttle, brake and steer
 # commands based on the output of the perception_step() function
+
+
 def decision_step(Rover):
 
     # Implement conditionals to decide what to do given perception data
     # Here you're all set up with some basic functionality but you'll need to
-    # improve on this decision tree to do a good job of navigating autonomously!
+    # improve on this decision tree to do a good job of navigating
+    # autonomously!
 
     def is_rock_sample_visible(rock_channel):
-        return (np.sum(rock_channel))
+        print("rock shape ", rock_channel.shape)
+        return (np.sum(rock_channel) > (5 * 255))
+
+    def rock_pix(rock_channel):
+        total_x = 0
+        x_count = 0
+        total_y = 0
+        y_count = 0
+        for x in range(0, rock_channel.shape[0]):
+            for y in range(0, rock_channel.shape[1]):
+                if rock_channel[x][y]:
+                    total_x = x
+                    x_count += 1
+                    total_y = y
+                    y_count += 1
+        if (x_count and y_count):
+            return total_x, total_y
+            #return (int(total_x/x_count), int(total_y/y_count))
+        else:
+            return (-1, -1)
+
     
     # Example:
     # Check if we have vision data to make decisions with
@@ -18,14 +41,16 @@ def decision_step(Rover):
         # Check for Rover.mode status
         if Rover.mode == 'forward': 
             # Check the extent of navigable terrain
+            print("nav dist ", Rover.nav_angles.shape)
             if is_rock_sample_visible(Rover.vision_image[:,:,1]) \
                 and Rover.search_fo_new_rock :
                 print("found rock Sample. Stop")
                 Rover.brake = Rover.brake_set
-                Rover.steer = -5
+                #Rover.steer = -5
                 Rover.mode = 'locate_rock'
                 Rover.last_pos = Rover.pos
                 Rover.last_rock_sum = is_rock_sample_visible(Rover.vision_image[:,:,1])
+                Rover.steer = Rover.steer / 3
             
             elif len(Rover.nav_angles) >= Rover.stop_forward:  
                 # If mode is forward, navigable terrain looks good 
@@ -57,37 +82,38 @@ def decision_step(Rover):
 
         # try to locate the rock
         elif Rover.mode == 'locate_rock':
-            if len(Rover.samples_found) == (Rover.my_rock_count + 1):
-                print("Found samples ", Rover.samples_found)
+            print("navigate rock angle")
+            if Rover.near_sample and Rover.vel == 0:
+                print("start pick up")
+                Rover.send_pickup = True
                 Rover.mode = 'forward'
-                Rover.search_fo_new_rock = False
-                Rover.my_rock_count += 1
-            else:
-                Rover.steer = -5
+            elif Rover.near_sample:
+                print("break to pickup object ")
                 Rover.brake = Rover.brake_set
-                new_rock_sum = is_rock_sample_visible(Rover.vision_image[:,:,1])
-                if new_rock_sum >= Rover.last_rock_sum + 5:
-                    # come closer to rock
-                    Rover.steer = 0
-                Rover.mode = 'come_to_rock'
-                Rover.last_rock_sum = new_rock_sum
+                Rover.throttle = 0
 
-        # move clost to rock 
-        elif Rover.mode == 'come_to_rock':
-            if len(Rover.samples_found) == (Rover.my_rock_count + 1):
-                print("Found samples ", Rover.samples_found)
-                Rover.mode = 'forward'
-                Rover.search_fo_new_rock = False
-                Rover.my_rock_count += 1
             else:
-                Rover.throttle = 0.05
-                Rover.brake = 0
+                # get rock angle  
                 new_rock_sum = is_rock_sample_visible(Rover.vision_image[:,:,1])
-                if (new_rock_sum >= Rover.last_rock_sum + 10):
+                Rover.throttle = 0.1
+                Rover.brake = 0
+                if (new_rock_sum < Rover.last_rock_sum):
+                    Rover.steer *= -1
+                if (new_rock_sum == 0):
+                    Rover.throttle = 0
                     Rover.brake = Rover.brake_set
-                    Rover.steer = 0
-                Rover.mode = 'locate_rock'
+                if (Rover.last_rock_sum == 0):
+                    Rover.brake = 0
+                    Rover.steer = -10
+                if (new_rock_sum):
+                    Rover.brake = 0
+                    Rover.throttle = 0.1
+
                 Rover.last_rock_sum = new_rock_sum
+                
+        
+
+            
 
 
         # If we're already in "stop" mode then make different decisions
