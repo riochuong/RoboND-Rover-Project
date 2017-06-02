@@ -55,12 +55,12 @@ def decision_step(Rover):
                 return True
             # start moving 
             elif Rover.stuck_count >= thres_1 and Rover.stuck_count < thres_2:
-                Rover.throttle = 1
+                Rover.throttle = 1.0
                 return True
             # try to back up here 
             elif Rover.stuck_count > thres_2 and Rover.stuck_count <= thres_3:
                 Rover.throttle = -0.5
-                Rover.steer = -15
+                Rover.steer *= (-1)
                 return True
             # try again 
             elif Rover.stuck_count > thres_3 :
@@ -80,7 +80,7 @@ def decision_step(Rover):
         if Rover.mode == 'navigate_rock':
             Rover.nav_rock_trial += 1
             new_rock_sum = is_rock_sample_visible(Rover.vision_image[:,:,1])
-            if (is_stuck(Rover, 150, 200, 250, 300)):
+            if (is_stuck(Rover, 150, 200, 300, 400)):
                     print("stuck try to escape")
             else:
                 Rover.stuck_count += 1
