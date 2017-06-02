@@ -59,10 +59,15 @@ class RoverState():
 
         #rock location
         self.last_rock_sum = 0
-        self.search_fo_new_rock = True
-        self.my_rock_count = 0
         self.last_pos = None
         self.stuck_count = 0
+        self.prev_yaw = None
+        self.rock_angles = None
+        self.nav_rock_trial = 0
+        self.yaw_spin_count = 0
+
+
+
 
         # The stop_forward and go_forward fields below represent total count
         # of navigable terrain pixels.  This is a very crude form of knowing
